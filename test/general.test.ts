@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../src/app"; // Assurez-vous que le chemin vers app.ts est correct
+import app from "../src/app";
 
 const baseURL = "http://localhost:7000";
 
@@ -38,7 +38,6 @@ describe("API Tests", () => {
   });
 
   beforeEach(async () => {
-    // Ajouter un client à la base de données avant chaque test
     await request(baseURL).post("/api/customers").send(newCustomer);
   });
 

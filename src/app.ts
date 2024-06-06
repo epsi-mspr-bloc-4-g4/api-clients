@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import customerRouter from "./routes/customer.routes";
-import { errorHandler } from "./middlewares/errorHandler"; // Assurez-vous du bon chemin d'accès
+import { errorHandler } from "./middlewares/errorHandler"; 
 
 dotenv.config();
 
@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(helmet());
 
-app.use(errorHandler); // Utilisation du middleware errorHandler
+app.use(errorHandler);
 
 app.use("/", customerRouter);
 

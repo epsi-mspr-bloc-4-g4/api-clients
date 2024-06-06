@@ -1,5 +1,3 @@
-// routes/customerRouter.js
-
 import express from "express";
 import * as customerController from "../controllers/customer.controller";
 
