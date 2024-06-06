@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { StatusCodes } from "http-status-codes";
 
 const prisma = new PrismaClient();
 export const customerRouter = express.Router();

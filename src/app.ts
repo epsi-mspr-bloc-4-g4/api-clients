@@ -2,7 +2,7 @@ import express from "express";
 import * as dotevnv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
-import { customerRouter } from "./customer.route";
+import { customerRouter } from "./customer.routes";
 
 dotevnv.config();
 
@@ -25,3 +25,4 @@ app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
 
+export default app;
