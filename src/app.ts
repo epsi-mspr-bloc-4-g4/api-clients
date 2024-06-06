@@ -2,6 +2,8 @@ import express from "express";
 import * as dotevnv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
+import customerRouter from "./routes/customer.routes";
+import { errorHandler } from "./middlewares/errorHandler";
 
 dotevnv.config();
 
@@ -18,6 +20,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(helmet());
 
+app.use(errorHandler);
+
+app.use("/", customerRouter);
+
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
+
+export default app;
