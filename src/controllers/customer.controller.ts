@@ -101,6 +101,8 @@ export const deleteCustomer = async (req: Request, res: Response) => {
   }
 };
 
+/* À IMPLEMENTER 
+
   // Récupération des commandes d'un client spécifique
 export const getOrdersByCustomerId = async (req: Request, res: Response) => {
   try {
@@ -145,3 +147,4 @@ export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Respo
     res.status(500).json({ error: "Something went wrong" });
   }
 };
+*/
