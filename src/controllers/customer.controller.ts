@@ -43,7 +43,13 @@ export const createCustomer = async (req: Request, res: Response) => {
 // Récupération de tous les clients
 export const getAllCustomers = async (req: Request, res: Response) => {
   try {
-    const customers = await prisma.customer.findMany();
+    const customers = await prisma.customer.findMany({
+      include: {
+        address: true,
+        profile: true,
+        company: true
+      }
+    });
     res.json(customers);
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });

@@ -4,6 +4,19 @@ import request from 'supertest';
 import app from '../src/app'; // Assurez-vous d'importer correctement votre application Express
 
 describe('POST /api/customers', () => {
+  let server: any;
+
+  beforeAll((done) => {
+    server = app.listen(7000, () => {
+      console.log('Test server is running on port 7000');
+      done();
+    });
+  });
+
+  afterAll((done) => {
+    server.close(done);
+  });
+  
   it('should create a new customer', async () => {
     const response = await request(app)
       .post('/api/customers')
