@@ -5,7 +5,6 @@ module.exports = {
     testEnvironment: 'node',
     setupFilesAfterEnv: ['@babel/register'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-    roots: ['<rootDir>/test'], // Assurez-vous que cela pointe vers votre répertoire de tests
     transform: {
         '^.+\\.tsx?$': 'ts-jest',
     },
