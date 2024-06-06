@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage --verbose",
     "dev": "ts-node-dev --pretty --respawn ./src/app.ts",
     "prisma:studio": "npx prisma studio"
   },
