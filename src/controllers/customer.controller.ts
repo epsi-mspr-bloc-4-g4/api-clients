@@ -100,3 +100,48 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
+
+  // Récupération des commandes d'un client spécifique
+export const getOrdersByCustomerId = async (req: Request, res: Response) => {
+  try {
+    const customerId = Number(req.params.customerId);
+    const orders = []; // await prisma.order.findMany({ where: { customerId } });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
+// Récupération d'une commande spécifique d'un client
+export const getOrderByIdAndCustomerId = async (req: Request, res: Response) => {
+  try {
+    const orderId = Number(req.params.orderId);
+    const order = []; // await prisma.order.findUnique({ where: { id: orderId } });
+    // Vérifier si la commande appartient au client spécifié
+    // if (order && order.customerId === Number(req.params.customerId)) {
+    //   res.json(order);
+    // } else {
+    //   res.status(404).json({ error: 'Order not found' });
+    // }
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
+// Récupération des produits d'une commande spécifique d'un client
+export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Response) => {
+  try {
+    const orderId = Number(req.params.orderId);
+    const products = []; // await prisma.order.findUnique({ where: { id: orderId } }).product();
+    // Vérifier si la commande appartient au client spécifié
+    // if (order && order.customerId === Number(req.params.customerId)) {
+    //   res.json(products);
+    // } else {
+    //   res.status(404).json({ error: 'Order not found' });
+    // }
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+};
