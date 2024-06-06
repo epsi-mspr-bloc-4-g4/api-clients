@@ -31,8 +31,10 @@ describe("API Tests", () => {
     });
   });
 
-  afterAll((done) => {
-    server.close(done);
+  afterAll((done: jest.DoneCallback) => {
+    server.close(() => {
+      done();
+    });
   });
 
   beforeEach(async () => {
@@ -88,4 +90,25 @@ describe("API Tests", () => {
     const response3 = await request(baseURL).get(`/api/customers/${lastCustomer.id}`);
     expect(response3.body).toHaveProperty('name', "Updated Name");
   });
-});
+
+  it("should persist data between restarts", (done) => {
+    // Step 1: Add a customer
+    request(baseURL).post("/api/customers").send(newCustomer).then(addResponse => {
+      expect(addResponse.statusCode).toBe(200);
+      const addedCustomer = addResponse.body;
+  
+      // Step 2: Restart the server
+      server.close(() => {
+        server = app.listen(7000, () => {
+          console.log("Test server restarted on port 7000");
+  
+          // Step 3: Verify the customer is still present
+          request(baseURL).get(`/api/customers/${addedCustomer.id}`).then(getResponse => {
+            expect(getResponse.statusCode).toBe(200);
+            done();
+          }).catch(err => done(err));
+        });
+      });
+    }).catch(err => done(err));
+  });
+    });
