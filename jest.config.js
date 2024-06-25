@@ -1,7 +1,6 @@
 // Jest configuration file
 module.exports = {
     preset: 'ts-jest',
-    transform: {},
     testEnvironment: 'node',
     setupFilesAfterEnv: ['@babel/register'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
@@ -11,5 +10,15 @@ module.exports = {
     testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
     transformIgnorePatterns: [
         '/node_modules/',
+    ],
+    collectCoverage: true,
+    coverageDirectory: 'coverage',
+    coverageReporters: ['json', 'lcov', 'text', 'clover'],
+    reporters: [
+        'default',
+        ['jest-sonar-reporter', {
+            outputDirectory: 'coverage',
+            outputName: 'sonar-report.xml',
+        }],
     ],
 };
