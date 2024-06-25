@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest --coverage --verbose",
     "dev": "ts-node-dev --pretty --respawn ./src/app.ts",
-    "prisma:studio": "npx prisma studio"
+    "prisma:studio": "npx prisma studio",
+    "start:nodemon": "./node_modules/nodemon/bin/nodemon.js"
   },
   "keywords": [],
   "author": "",
