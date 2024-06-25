@@ -1,28 +1,43 @@
+import './../instrument.js';
+import * as Sentry from "@sentry/node";
 import express from "express";
-import * as dotevnv from "dotenv";
+import * as dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from 'cookie-parser';
 import helmet from "helmet";
-import { customerRouter } from "./customer.routes";
+import customerRouter from "./routes/customer.routes";
+import { errorHandler } from "./middlewares/errorHandler"; 
 
-dotevnv.config();
+dotenv.config();
 
-if (!process.env.PORT) {
-  console.log(`No port value specified...`);
-}
-
-const PORT = parseInt(process.env.PORT as string, 10);
+const PORT = process.env.PORT || 3000;
 
 const app = express();
+
+app.use(cookieParser());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(helmet());
 
+app.use(errorHandler);
+Sentry.setupExpressErrorHandler(app);
+
+app.get("/debug-sentry", function mainHandler(req, res) {
+  throw new Error("My first Sentry error!");
+});
+
 app.use("/", customerRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+app.use((req, res) => {
+  res.status(404).send({ message: 'Bad request' });
 });
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}`);
+  });
+}
 
 export default app;
