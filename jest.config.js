@@ -2,7 +2,7 @@
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
-    setupFiles: ['<rootDir>/jest.setup.js'],
+    setupFilesAfterEnv: ['@babel/register'],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     transform: {
         '^.+\\.tsx?$': 'ts-jest',
