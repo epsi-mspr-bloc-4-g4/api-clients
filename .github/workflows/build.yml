@@ -9,6 +9,8 @@ jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
+    env: 
+      DATABASE_URL: postgresql://postgres:123@localhost:5434/epsi_customers?schema=public
     services:
       postgres:
         image: postgres:latest
