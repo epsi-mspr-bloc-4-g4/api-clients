@@ -11,14 +11,4 @@ module.exports = {
     transformIgnorePatterns: [
         '/node_modules/',
     ],
-    collectCoverage: true,
-    coverageDirectory: 'coverage',
-    coverageReporters: ['json', 'lcov', 'text', 'clover'],
-    reporters: [
-        'default',
-        ['jest-sonar-reporter', {
-            outputDirectory: 'coverage',
-            outputName: 'sonar-report.xml',
-        }],
-    ],
 };
