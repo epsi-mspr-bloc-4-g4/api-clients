@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { consumeMessages } from '../../kafka/consumer';
 
 const prisma = new PrismaClient();
 
@@ -107,50 +108,57 @@ export const deleteCustomer = async (req: Request, res: Response) => {
   }
 };
 
-/* À IMPLEMENTER 
-
-  // Récupération des commandes d'un client spécifique
 export const getOrdersByCustomerId = async (req: Request, res: Response) => {
   try {
-    const customerId = Number(req.params.customerId);
-    const orders = []; // await prisma.order.findMany({ where: { customerId } });
+    const { customerId } = req.params;
+    const messages = await consumeMessages('order-products-fetch');
+
+    // Process messages to get orders for the customer
+    const orders = messages.filter(message => JSON.parse(message.value).customerId === customerId);
+
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
+    console.log(error);
   }
 };
 
-// Récupération d'une commande spécifique d'un client
 export const getOrderByIdAndCustomerId = async (req: Request, res: Response) => {
   try {
-    const orderId = Number(req.params.orderId);
-    const order = []; // await prisma.order.findUnique({ where: { id: orderId } });
-    // Vérifier si la commande appartient au client spécifié
-    // if (order && order.customerId === Number(req.params.customerId)) {
-    //   res.json(order);
-    // } else {
-    //   res.status(404).json({ error: 'Order not found' });
-    // }
+    const { customerId, orderId } = req.params;
+    const messages = await consumeMessages('order-products-fetch');
+
+    // Process messages to get the specific order for the customer
+    const order = messages.find(message => {
+      const value = JSON.parse(message.value);
+      return value.customerId === customerId && value.orderId === orderId;
+    });
+
     res.json(order);
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
+    console.log(error);
   }
 };
 
-// Récupération des produits d'une commande spécifique d'un client
 export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Response) => {
   try {
-    const orderId = Number(req.params.orderId);
-    const products = []; // await prisma.order.findUnique({ where: { id: orderId } }).product();
-    // Vérifier si la commande appartient au client spécifié
-    // if (order && order.customerId === Number(req.params.customerId)) {
-    //   res.json(products);
-    // } else {
-    //   res.status(404).json({ error: 'Order not found' });
-    // }
-    res.json(products);
+    const { customerId, orderId } = req.params;
+    const messages = await consumeMessages('order-products-fetch');
+
+    // Process messages to get products for the specific order and customer
+    const order = messages.find(message => {
+      const value = JSON.parse(message.value);
+      return value.customerId === customerId && value.orderId === orderId;
+    });
+
+    if (order) {
+      res.json(JSON.parse(order.value).products);
+    } else {
+      res.status(404).json({ error: 'Order not found' });
+    }
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Something went wrong' });
+    console.log(error);
   }
 };
-*/
