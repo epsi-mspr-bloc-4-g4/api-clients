@@ -1,4 +1,7 @@
-import { consumer } from './kafkaconfig';
+import { consumer } from "./kafkaconfig";
+import * as dotevnv from "dotenv";
+
+dotevnv.config();
 
 interface KafkaMessage {
   topic: string;
@@ -10,19 +13,19 @@ interface KafkaMessage {
 let isRunning = false;
 let messages: KafkaMessage[] = [];
 
-export const consumeMessages = async (topic: string): Promise<KafkaMessage[]> => {
+export const consumeMessages = async (
+  topic: string
+): Promise<KafkaMessage[]> => {
   if (isRunning) {
-    console.log('Consumer is already running');
-    console.log('messages :: ', messages);
     return messages;
   }
 
   await consumer.connect();
-  await consumer.subscribe({ topic });
+  await consumer.subscribe({ topic: topic, fromBeginning: true });
 
-  console.log('START?');
+  console.log("START?");
   isRunning = true;
-  messages = []; // Reset messages for each new consumption
+  messages = [];
 
   await consumer.run({
     autoCommit: false,
@@ -31,16 +34,14 @@ export const consumeMessages = async (topic: string): Promise<KafkaMessage[]> =>
         topic: topic,
         partition: partition,
         offset: message.offset,
-        value: message.value?.toString() || '',
+        value: message.value?.toString() || "",
       });
     },
   });
 
-  // Wait for messages to be consumed
-  await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5 seconds
-
-  console.log('END?');
-  console.log('messages :: ', messages);
+  await new Promise((resolve) =>
+    setTimeout(resolve, Number(process.env.DEFAULT_SET_TIMEOUT))
+  ); // attendre 5 secondes
 
   return messages;
 };

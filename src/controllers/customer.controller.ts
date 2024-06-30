@@ -1,18 +1,19 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { consumeMessages } from '../../kafka/consumer';
+import { consumeMessages } from "../../kafka/consumer";
 
 const prisma = new PrismaClient();
 
 // Création d'un nouveau client
 export const createCustomer = async (req: Request, res: Response) => {
   try {
-    const { name, company, username, firstName, lastName, address, profile } = req.body;
+    const { name, company, username, firstName, lastName, address, profile } =
+      req.body;
     const newCustomer = await prisma.customer.create({
       data: {
         createdAt: new Date(),
         company: {
-          create: { 
+          create: {
             name: company.name,
           },
         },
@@ -48,8 +49,8 @@ export const getAllCustomers = async (req: Request, res: Response) => {
       include: {
         address: true,
         profile: true,
-        company: true
-      }
+        company: true,
+      },
     });
     res.json(customers);
   } catch (error) {
@@ -102,7 +103,9 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     const customer = await prisma.customer.delete({
       where: { id: Number(req.params.id) },
     });
-    res.json(`Customer ${customer.firstName} ${customer.lastName} has been successfully deleted!`);
+    res.json(
+      `Customer ${customer.firstName} ${customer.lastName} has been successfully deleted!`
+    );
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }
@@ -111,43 +114,54 @@ export const deleteCustomer = async (req: Request, res: Response) => {
 export const getOrdersByCustomerId = async (req: Request, res: Response) => {
   try {
     const { customerId } = req.params;
-    const messages = await consumeMessages('order-products-fetch');
+
+    const messages = await consumeMessages("client-orders-fetch");
+
+    console.log("messages :: ", messages);
 
     // Process messages to get orders for the customer
-    const orders = messages.filter(message => JSON.parse(message.value).customerId === customerId);
+    const orders = messages.filter(
+      (message) => JSON.parse(message.value).customerId === customerId
+    );
 
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
     console.log(error);
   }
 };
 
-export const getOrderByIdAndCustomerId = async (req: Request, res: Response) => {
+export const getOrderByIdAndCustomerId = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { customerId, orderId } = req.params;
-    const messages = await consumeMessages('order-products-fetch');
+    const messages = await consumeMessages("client-orders-fetch");
 
     // Process messages to get the specific order for the customer
-    const order = messages.find(message => {
+    const order = messages.find((message) => {
       const value = JSON.parse(message.value);
       return value.customerId === customerId && value.orderId === orderId;
     });
 
     res.json(order);
   } catch (error) {
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
     console.log(error);
   }
 };
 
-export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Response) => {
+export const getProductsByOrderIdAndCustomerId = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { customerId, orderId } = req.params;
-    const messages = await consumeMessages('order-products-fetch');
+    const messages = await consumeMessages("client-orders-fetch");
 
     // Process messages to get products for the specific order and customer
-    const order = messages.find(message => {
+    const order = messages.find((message) => {
       const value = JSON.parse(message.value);
       return value.customerId === customerId && value.orderId === orderId;
     });
@@ -155,10 +169,10 @@ export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Respo
     if (order) {
       res.json(JSON.parse(order.value).products);
     } else {
-      res.status(404).json({ error: 'Order not found' });
+      res.status(404).json({ error: "Order not found" });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
     console.log(error);
   }
 };

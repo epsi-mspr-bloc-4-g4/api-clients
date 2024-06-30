@@ -1,9 +1,12 @@
-import { Kafka } from 'kafkajs';
+import { Kafka } from "kafkajs";
+import * as dotevnv from "dotenv";
+
+dotevnv.config();
 
 export const kafka = new Kafka({
-  clientId: 'my-app',
+  clientId: "Client",
   brokers: [process.env.KAFKA_SERVER as string],
 });
 
-export const consumer = kafka.consumer({ groupId: 'test-group' });
+export const consumer = kafka.consumer({ groupId: "clientsGroup" });
 export const producer = kafka.producer();
