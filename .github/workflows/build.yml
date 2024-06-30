@@ -6,37 +6,56 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
+    env: 
+      DATABASE_URL: postgresql://postgres:123@localhost:5434/epsi_customers?schema=public
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: epsi_customers
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '20'  # Use the Node.js version your project requires
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --include=dev
 
-      - name: Run tests with coverage
+      - name: Setup PostgreSQL
+        run: |
+          # Wait for PostgreSQL to start
+          until nc -z localhost 5434; do
+            echo "Waiting for PostgreSQL to start..."
+            sleep 1
+          done
+
+          # Generate and apply migrations
+          npx prisma generate
+          npx prisma migrate dev --name init
+
+      - name: Run tests
         run: npm test
 
-      - name: Upload coverage to SonarQube
+      - name: Sonar Scan
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
       # If you wish to fail your job when the Quality Gate is red, uncomment the
       # following lines. This would typically be used to fail a deployment.
-      # - name: SonarQube Quality Gate
-      #   uses: sonarsource/sonarqube-quality-gate-action@master
+      # - uses: sonarsource/sonarqube-quality-gate-action@master
       #   timeout-minutes: 5
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
