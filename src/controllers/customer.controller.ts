@@ -162,3 +162,45 @@ export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Respo
     console.log(error);
   }
 };
+
+export const createClientOrder = async (req: Request, res: Response) => {
+  try {
+    const { customerId, orderId, products } = req.body;
+    const message = JSON.stringify({ customerId, orderId, products, action: 'create' });
+
+    await sendMessage('order-products', message);
+
+    res.status(201).json({ message: 'Order created successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+    console.log(error);
+  }
+};
+
+export const updateClientOrder = async (req: Request, res: Response) => {
+  try {
+    const { customerId, orderId, products } = req.body;
+    const message = JSON.stringify({ customerId, orderId, products, action: 'update' });
+
+    await sendMessage('order-products', message);
+
+    res.json({ message: 'Order updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+    console.log(error);
+  }
+};
+
+export const deleteClientOrder = async (req: Request, res: Response) => {
+  try {
+    const { customerId, orderId } = req.params;
+    const message = JSON.stringify({ customerId, orderId, action: 'delete' });
+
+    await sendMessage('order-products', message);
+
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+    console.log(error);
+  }
+};
