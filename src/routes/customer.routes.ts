@@ -12,16 +12,16 @@ customerRouter.delete("/api/customers/:id", customerController.deleteCustomer);
 
 // Customer orders routes
 customerRouter.get('/api/customers/:customerId/orders', customerController.getOrdersByCustomerId);
-customerRouter.post('/api/customers/:customerId/orders', customerController.createClientOrder);
+// ustomerRouter.post('/api/customers/:customerId/orders', customerController.createClientOrder);
 
 // Customer order routes by id
 customerRouter.get('/api/customers/:customerId/orders/:orderId', customerController.getOrderByIdAndCustomerId);
-customerRouter.put('/api/customers/:customerId/orders/:orderId', customerController.updateClientOrder);
-customerRouter.delete('/api/customers/:customerId/orders/:orderId', customerController.deleteClientOrder);
+//customerRouter.put('/api/customers/:customerId/orders/:orderId', customerController.updateClientOrder);
+//customerRouter.delete('/api/customers/:customerId/orders/:orderId', customerController.deleteClientOrder);
 
 // Customer order products routes
 customerRouter.get('/api/customers/:customerId/orders/:orderId/products', customerController.getProductsByOrderIdAndCustomerId);
-customerRouter.put('/api/customers/:customerId/orders/:orderId/products', customerController.updateClientOrder);
-customerRouter.delete('/api/customers/:customerId/orders/:orderId/products', customerController.deleteClientOrder);
+//customerRouter.put('/api/customers/:customerId/orders/:orderId/products', customerController.updateClientOrder);
+// customerRouter.delete('/api/customers/:customerId/orders/:orderId/products', customerController.deleteClientOrder);
 
 export default customerRouter;
