@@ -254,28 +254,39 @@ export const getProductsByOrderIdAndCustomerId = async (
 ) => {
   try {
     const { customerId, orderId } = req.params;
-
     const messages = await consumeMessages("client-orders-fetch");
 
-    let foundOrder = null;
+    // Initialiser une liste pour stocker les produits trouvés
+    let productsList: any[] = [];
+
+    // Parcourir les messages pour trouver les produits correspondant à customerId et orderId
     for (const message of messages) {
       const value = JSON.parse(message.value);
-      const order = Array.isArray(value)
-        ? value.find(
-            (order: any) =>
-              order.customerId === Number(customerId) &&
-              order.orderId === Number(orderId)
-          )
-        : null;
 
-      if (order) {
-        foundOrder = order;
-        break;
+      // Vérifier si la valeur est un tableau et filtrer les produits correspondants
+      if (Array.isArray(value)) {
+        const products = value
+          .filter(
+            (product: any) =>
+              product.customerId === Number(customerId) &&
+              product.orderId === Number(orderId)
+          )
+          .map((product: any) => ({
+            createdAt: product.createdAt,
+            id: product.id,
+            orderId: product.orderId,
+            name: product.name,
+            details: product.details,
+            stock: product.stock,
+          }));
+
+        // Ajouter les produits trouvés à la liste des produits
+        productsList = productsList.concat(products);
       }
     }
 
-    if (foundOrder) {
-      res.json(foundOrder);
+    if (productsList.length > 0) {
+      res.json(productsList);
     } else {
       res.status(404).json({ error: "Order not found" });
     }
