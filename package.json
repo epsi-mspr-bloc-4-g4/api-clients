@@ -7,7 +7,9 @@
     "test": "jest --coverage --verbose",
     "dev": "ts-node-dev --pretty --respawn ./src/app.ts",
     "prisma:studio": "npx prisma studio",
-    "start:nodemon": "./node_modules/nodemon/bin/nodemon.js"
+    "start:nodemon": "./node_modules/nodemon/bin/nodemon.js",
+    "build": "rimraf ./dist && tsc",
+    "start": "npm run build && node dist/app.js"
   },
   "keywords": [],
   "author": "",
