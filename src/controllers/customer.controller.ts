@@ -1,17 +1,19 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { consumeMessages } from "../../kafka/consumer";
 
 const prisma = new PrismaClient();
 
 // Création d'un nouveau client
 export const createCustomer = async (req: Request, res: Response) => {
   try {
-    const { name, company, username, firstName, lastName, address, profile } = req.body;
+    const { name, company, username, firstName, lastName, address, profile } =
+      req.body;
     const newCustomer = await prisma.customer.create({
       data: {
         createdAt: new Date(),
         company: {
-          create: { 
+          create: {
             name: company.name,
           },
         },
@@ -43,14 +45,51 @@ export const createCustomer = async (req: Request, res: Response) => {
 // Récupération de tous les clients
 export const getAllCustomers = async (req: Request, res: Response) => {
   try {
+    const messages = await consumeMessages("client-orders-fetch");
+
+    const latestOrders = JSON.parse(messages[messages.length - 1].value);
+
     const customers = await prisma.customer.findMany({
       include: {
         address: true,
         profile: true,
-        company: true
-      }
+        company: true,
+      },
     });
-    res.json(customers);
+
+    let customArray: any[] = [];
+
+    customers.forEach((customer) => {
+      const customerOrders = latestOrders.filter(
+        (order: any) => order.customerId === customer.id
+      );
+      customArray.push({
+        createdAt: customer.createdAt,
+        name: customer.name,
+        username: customer.username,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        address: {
+          postalCode: customer.address.postalCode,
+          city: customer.address.city,
+        },
+        profile: {
+          firstname: customer.firstName,
+          lastname: customer.lastName,
+        },
+        company: {
+          companyName: customer.company.name,
+        },
+        id: customer.id,
+        orders: customerOrders.map((order: any) => ({
+          id: order.id,
+          customerId: order.customerId,
+          createdAt: order.createdAt,
+        })),
+      });
+    });
+
+    res.json(customArray);
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }
@@ -101,56 +140,158 @@ export const deleteCustomer = async (req: Request, res: Response) => {
     const customer = await prisma.customer.delete({
       where: { id: Number(req.params.id) },
     });
-    res.json(`Customer ${customer.firstName} ${customer.lastName} has been successfully deleted!`);
+    res.json(
+      `Customer ${customer.firstName} ${customer.lastName} has been successfully deleted!`
+    );
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
 
-/* À IMPLEMENTER 
-
-  // Récupération des commandes d'un client spécifique
 export const getOrdersByCustomerId = async (req: Request, res: Response) => {
   try {
-    const customerId = Number(req.params.customerId);
-    const orders = []; // await prisma.order.findMany({ where: { customerId } });
-    res.json(orders);
+    const { customerId } = req.params;
+
+    const messages = await consumeMessages("client-orders-fetch");
+
+    const latestOrders = JSON.parse(messages[messages.length - 1].value);
+
+    // Filter orders to get those for the specified customer
+    const filteredOrders = latestOrders.filter(
+      (order: any) => order.customerId === Number(customerId)
+    );
+
+    // Group orders by orderId
+    const ordersByOrderId = filteredOrders.reduce((acc: any, order: any) => {
+      if (!acc[order.orderId]) {
+        acc[order.orderId] = {
+          customerId: order.customerId,
+          id: order.orderId,
+          createdAt: order.createdAt,
+          products: [],
+        };
+      }
+      acc[order.orderId].products.push({
+        id: order.id,
+        orderId: order.orderId,
+        name: order.name,
+        details: order.details,
+        stock: order.stock,
+      });
+      return acc;
+    }, {});
+
+    // Convert the grouped orders into an array
+    const customerOrders = Object.values(ordersByOrderId);
+
+    res.json(customerOrders);
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: "Something went wrong " + error });
+    console.log(error);
   }
 };
 
-// Récupération d'une commande spécifique d'un client
-export const getOrderByIdAndCustomerId = async (req: Request, res: Response) => {
+export const getOrderByIdAndCustomerId = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const orderId = Number(req.params.orderId);
-    const order = []; // await prisma.order.findUnique({ where: { id: orderId } });
-    // Vérifier si la commande appartient au client spécifié
-    // if (order && order.customerId === Number(req.params.customerId)) {
-    //   res.json(order);
-    // } else {
-    //   res.status(404).json({ error: 'Order not found' });
-    // }
-    res.json(order);
+    const { customerId, orderId } = req.params;
+
+    const messages = await consumeMessages("client-orders-fetch");
+
+    // Process messages to get the specific order for the customer
+    let foundOrder = null;
+    for (const message of messages) {
+      const value = JSON.parse(message.value);
+      const order = Array.isArray(value)
+        ? value.find(
+            (order: any) =>
+              order.customerId === Number(customerId) &&
+              order.orderId === Number(orderId)
+          )
+        : null;
+
+      const products = value
+        .map((product: any) => {
+          if (!!order && product.orderId == order.orderId) {
+            return {
+              id: product.id,
+              orderId: product.orderId,
+              name: product.name,
+              details: product.details,
+              stock: product.stock,
+            };
+          }
+        })
+        .filter((product: any) => product);
+
+      if (order) {
+        foundOrder = {
+          id: order.id,
+          customerId: order.customerId,
+          createdAt: order.createdAt,
+          products: products,
+        };
+        break;
+      }
+    }
+
+    if (foundOrder) {
+      res.json(foundOrder);
+    } else {
+      res.status(404).json({ error: "Order not found" });
+    }
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: `Something went wrong: ${error}` });
+    console.log(error);
   }
 };
 
-// Récupération des produits d'une commande spécifique d'un client
-export const getProductsByOrderIdAndCustomerId = async (req: Request, res: Response) => {
+export const getProductsByOrderIdAndCustomerId = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const orderId = Number(req.params.orderId);
-    const products = []; // await prisma.order.findUnique({ where: { id: orderId } }).product();
-    // Vérifier si la commande appartient au client spécifié
-    // if (order && order.customerId === Number(req.params.customerId)) {
-    //   res.json(products);
-    // } else {
-    //   res.status(404).json({ error: 'Order not found' });
-    // }
-    res.json(products);
+    const { customerId, orderId } = req.params;
+    const messages = await consumeMessages("client-orders-fetch");
+
+    // Initialiser une liste pour stocker les produits trouvés
+    let productsList: any[] = [];
+
+    // Parcourir les messages pour trouver les produits correspondant à customerId et orderId
+    for (const message of messages) {
+      const value = JSON.parse(message.value);
+
+      // Vérifier si la valeur est un tableau et filtrer les produits correspondants
+      if (Array.isArray(value)) {
+        const products = value
+          .filter(
+            (product: any) =>
+              product.customerId === Number(customerId) &&
+              product.orderId === Number(orderId)
+          )
+          .map((product: any) => ({
+            createdAt: product.createdAt,
+            id: product.id,
+            orderId: product.orderId,
+            name: product.name,
+            details: product.details,
+            stock: product.stock,
+          }));
+
+        // Ajouter les produits trouvés à la liste des produits
+        productsList = productsList.concat(products);
+      }
+    }
+
+    if (productsList.length > 0) {
+      res.json(productsList);
+    } else {
+      res.status(404).json({ error: "Order not found" });
+    }
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: `Something went wrong: ${error}` });
+    console.log(error);
   }
 };
-*/
