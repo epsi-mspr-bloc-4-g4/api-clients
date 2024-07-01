@@ -47,7 +47,6 @@ describe("API Tests", () => {
     ]);
 
     const response = await request(app).get("/api/customers");
-
     expect(response.statusCode).toBe(200);
     expect(response.body.length).toBeGreaterThan(0);
   }, 20000);
