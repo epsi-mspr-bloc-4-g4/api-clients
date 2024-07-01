@@ -45,6 +45,10 @@ export const createCustomer = async (req: Request, res: Response) => {
 // Récupération de tous les clients
 export const getAllCustomers = async (req: Request, res: Response) => {
   try {
+    const messages = await consumeMessages("client-orders-fetch");
+
+    const latestOrders = JSON.parse(messages[messages.length - 1].value);
+
     const customers = await prisma.customer.findMany({
       include: {
         address: true,
@@ -52,7 +56,40 @@ export const getAllCustomers = async (req: Request, res: Response) => {
         company: true,
       },
     });
-    res.json(customers);
+
+    let customArray: any[] = [];
+
+    customers.forEach((customer) => {
+      const customerOrders = latestOrders.filter(
+        (order: any) => order.customerId === customer.id
+      );
+      customArray.push({
+        createdAt: customer.createdAt,
+        name: customer.name,
+        username: customer.username,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        address: {
+          postalCode: customer.address.postalCode,
+          city: customer.address.city,
+        },
+        profile: {
+          firstname: customer.firstName,
+          lastname: customer.lastName,
+        },
+        company: {
+          companyName: customer.company.name,
+        },
+        id: customer.id,
+        orders: customerOrders.map((order: any) => ({
+          id: order.id,
+          customerId: order.customerId,
+          createdAt: order.createdAt,
+        })),
+      });
+    });
+
+    res.json(customArray);
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }
@@ -117,16 +154,39 @@ export const getOrdersByCustomerId = async (req: Request, res: Response) => {
 
     const messages = await consumeMessages("client-orders-fetch");
 
-    console.log("messages :: ", messages);
+    const latestOrders = JSON.parse(messages[messages.length - 1].value);
 
-    // Process messages to get orders for the customer
-    const orders = messages.filter(
-      (message) => JSON.parse(message.value).customerId === customerId
+    // Filter orders to get those for the specified customer
+    const filteredOrders = latestOrders.filter(
+      (order: any) => order.customerId === Number(customerId)
     );
 
-    res.json(orders);
+    // Group orders by orderId
+    const ordersByOrderId = filteredOrders.reduce((acc: any, order: any) => {
+      if (!acc[order.orderId]) {
+        acc[order.orderId] = {
+          customerId: order.customerId,
+          id: order.orderId,
+          createdAt: order.createdAt,
+          products: [],
+        };
+      }
+      acc[order.orderId].products.push({
+        id: order.id,
+        orderId: order.orderId,
+        name: order.name,
+        details: order.details,
+        stock: order.stock,
+      });
+      return acc;
+    }, {});
+
+    // Convert the grouped orders into an array
+    const customerOrders = Object.values(ordersByOrderId);
+
+    res.json(customerOrders);
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: "Something went wrong " + error });
     console.log(error);
   }
 };
@@ -137,17 +197,53 @@ export const getOrderByIdAndCustomerId = async (
 ) => {
   try {
     const { customerId, orderId } = req.params;
+
     const messages = await consumeMessages("client-orders-fetch");
 
     // Process messages to get the specific order for the customer
-    const order = messages.find((message) => {
+    let foundOrder = null;
+    for (const message of messages) {
       const value = JSON.parse(message.value);
-      return value.customerId === customerId && value.orderId === orderId;
-    });
+      const order = Array.isArray(value)
+        ? value.find(
+            (order: any) =>
+              order.customerId === Number(customerId) &&
+              order.orderId === Number(orderId)
+          )
+        : null;
 
-    res.json(order);
+      const products = value
+        .map((product: any) => {
+          if (!!order && product.orderId == order.orderId) {
+            return {
+              id: product.id,
+              orderId: product.orderId,
+              name: product.name,
+              details: product.details,
+              stock: product.stock,
+            };
+          }
+        })
+        .filter((product: any) => product);
+
+      if (order) {
+        foundOrder = {
+          id: order.id,
+          customerId: order.customerId,
+          createdAt: order.createdAt,
+          products: products,
+        };
+        break;
+      }
+    }
+
+    if (foundOrder) {
+      res.json(foundOrder);
+    } else {
+      res.status(404).json({ error: "Order not found" });
+    }
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: `Something went wrong: ${error}` });
     console.log(error);
   }
 };
@@ -158,21 +254,33 @@ export const getProductsByOrderIdAndCustomerId = async (
 ) => {
   try {
     const { customerId, orderId } = req.params;
+
     const messages = await consumeMessages("client-orders-fetch");
 
-    // Process messages to get products for the specific order and customer
-    const order = messages.find((message) => {
+    let foundOrder = null;
+    for (const message of messages) {
       const value = JSON.parse(message.value);
-      return value.customerId === customerId && value.orderId === orderId;
-    });
+      const order = Array.isArray(value)
+        ? value.find(
+            (order: any) =>
+              order.customerId === Number(customerId) &&
+              order.orderId === Number(orderId)
+          )
+        : null;
 
-    if (order) {
-      res.json(JSON.parse(order.value).products);
+      if (order) {
+        foundOrder = order;
+        break;
+      }
+    }
+
+    if (foundOrder) {
+      res.json(foundOrder);
     } else {
       res.status(404).json({ error: "Order not found" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: `Something went wrong: ${error}` });
     console.log(error);
   }
 };
