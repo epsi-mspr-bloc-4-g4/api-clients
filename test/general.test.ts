@@ -1,4 +1,4 @@
-import { consumeMessages } from "../kafka/consumer";
+import { consumeMessages } from "../src/kafka/consumer";
 import request from "supertest";
 import app from "../src/app";
 
