@@ -1,22 +1,31 @@
-# BASE IMAGE
-FROM node:lts-alpine3.20
+# Build Stage
+FROM node:lts-alpine3.20 AS build
 LABEL org.opencontainers.image.description "A simple Node.js Customer API for PayeTonKawa company using Express.js and Prisma ORM"
-
-# COPY FILES
-COPY ./src /app
-COPY ./prisma /app/prisma
-COPY ./package.json /app/package.json
 
 WORKDIR /app
 
-# Install dependencies
-RUN npm install --omit=dev
+COPY package*.json .
 
-# RUN APP
-CMD ["node", "app.ts"]
+RUN npm install
 
-EXPOSE 3000
+COPY . .
 
+RUN npm run build
+
+#Production stage
+FROM node:lts-alpine3.20 AS production
+
+WORKDIR /app
+
+COPY package*.json .
+
+RUN npm ci --only=production
+
+COPY --from=build /app/dist ./dist
+
+COPY prisma/schema.prisma /app/prisma/schema.prisma
+
+COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Set the entrypoint to the entrypoint script

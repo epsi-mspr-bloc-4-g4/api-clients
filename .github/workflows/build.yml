@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       DATABASE_URL: postgresql://postgres:123@localhost:5434/epsi_customers?schema=public
+      PORT: 7000
+      KAFKA_SERVER: "82.66.231.166:39092"
     services:
       postgres:
         image: postgres:latest

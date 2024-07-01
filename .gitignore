@@ -42,3 +42,7 @@ test/*.js
 .env
 .vscode
 .idea
+
+package-lock.json
+
+dist/
