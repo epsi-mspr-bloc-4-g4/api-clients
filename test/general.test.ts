@@ -1,5 +1,8 @@
+import { consumeMessages } from "../kafka/consumer";
 import request from "supertest";
 import app from "../src/app";
+
+jest.mock("../kafka/consumer");
 
 describe("API Tests", () => {
   const newCustomer = {
@@ -25,12 +28,28 @@ describe("API Tests", () => {
   });
 
   it("GET /api/customers : should return 200", async () => {
-    const response = await request(app).get("/api/customers");
-    await new Promise((resolve) => setTimeout(resolve, 6000)); // attendre 6 secondes
+    // Mock implementation for consumeMessages
+    (consumeMessages as jest.Mock).mockResolvedValue([
+      {
+        value: JSON.stringify([
+          {
+            id: "order1",
+            customerId: "customer1",
+            createdAt: "2023-07-01T00:00:00Z",
+          },
+          {
+            id: "order2",
+            customerId: "customer2",
+            createdAt: "2023-07-01T00:00:00Z",
+          },
+        ]),
+      },
+    ]);
 
+    const response = await request(app).get("/api/customers");
     expect(response.statusCode).toBe(200);
     expect(response.body.length).toBeGreaterThan(0);
-  });
+  }, 20000);
 
   it("GET /api/customers/:id : should return 200", async () => {
     const response = await request(app).get("/api/customers");
