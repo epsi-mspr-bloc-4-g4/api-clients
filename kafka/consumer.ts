@@ -39,9 +39,7 @@ export const consumeMessages = async (
     },
   });
 
-  await new Promise((resolve) =>
-    setTimeout(resolve, Number(process.env.DEFAULT_SET_TIMEOUT))
-  ); // attendre 5 secondes
+  await new Promise((resolve) => setTimeout(resolve, 5000)); // attendre 5 secondes
 
   return messages;
 };

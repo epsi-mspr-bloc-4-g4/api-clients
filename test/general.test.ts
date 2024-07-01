@@ -26,6 +26,8 @@ describe("API Tests", () => {
 
   it("GET /api/customers : should return 200", async () => {
     const response = await request(app).get("/api/customers");
+    await new Promise((resolve) => setTimeout(resolve, 6000)); // attendre 6 secondes
+
     expect(response.statusCode).toBe(200);
     expect(response.body.length).toBeGreaterThan(0);
   });
@@ -68,15 +70,21 @@ describe("API Tests", () => {
   });
 
   it("should persist data between restarts", (done) => {
-    request(app).post("/api/customers").send(newCustomer).then(addResponse => {
-      expect(addResponse.statusCode).toBe(200);
-      const addedCustomer = addResponse.body;
-  
-      request(app).get(`/api/customers/${addedCustomer.id}`).then(getResponse => {
-        expect(getResponse.statusCode).toBe(200);
-        done();
-      }).catch(err => done(err));
+    request(app)
+      .post("/api/customers")
+      .send(newCustomer)
+      .then((addResponse) => {
+        expect(addResponse.statusCode).toBe(200);
+        const addedCustomer = addResponse.body;
 
-    }).catch(err => done(err));
+        request(app)
+          .get(`/api/customers/${addedCustomer.id}`)
+          .then((getResponse) => {
+            expect(getResponse.statusCode).toBe(200);
+            done();
+          })
+          .catch((err) => done(err));
+      })
+      .catch((err) => done(err));
   });
 });
