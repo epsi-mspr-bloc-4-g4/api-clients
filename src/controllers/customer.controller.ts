@@ -47,7 +47,11 @@ export const getAllCustomers = async (req: Request, res: Response) => {
   try {
     const messages = await consumeMessages("client-orders-fetch");
 
-    const latestOrders = JSON.parse(messages[messages.length - 1].value);
+    let latestOrders: any[] = [];
+
+    if (messages.length > 0) {
+      latestOrders = JSON.parse(messages[messages.length - 1].value);
+    }
 
     const customers = await prisma.customer.findMany({
       include: {
@@ -91,7 +95,7 @@ export const getAllCustomers = async (req: Request, res: Response) => {
 
     res.json(customArray);
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: "Something went wrong " + error });
   }
 };
 
@@ -154,7 +158,11 @@ export const getOrdersByCustomerId = async (req: Request, res: Response) => {
 
     const messages = await consumeMessages("client-orders-fetch");
 
-    const latestOrders = JSON.parse(messages[messages.length - 1].value);
+    let latestOrders: any[] = [];
+
+    if (messages.length > 0) {
+      latestOrders = JSON.parse(messages[messages.length - 1].value);
+    }
 
     // Filter orders to get those for the specified customer
     const filteredOrders = latestOrders.filter(
@@ -200,8 +208,13 @@ export const getOrderByIdAndCustomerId = async (
 
     const messages = await consumeMessages("client-orders-fetch");
 
+    if (messages.length === 0) {
+      res.status(404).json({ error: "No orders found" });
+      return;
+    }
     // Process messages to get the specific order for the customer
     let foundOrder = null;
+
     for (const message of messages) {
       const value = JSON.parse(message.value);
       const order = Array.isArray(value)
@@ -259,6 +272,10 @@ export const getProductsByOrderIdAndCustomerId = async (
     // Initialiser une liste pour stocker les produits trouvés
     let productsList: any[] = [];
 
+    if (messages.length === 0) {
+      res.status(404).json({ error: "No orders found" });
+      return;
+    }
     // Parcourir les messages pour trouver les produits correspondant à customerId et orderId
     for (const message of messages) {
       const value = JSON.parse(message.value);
